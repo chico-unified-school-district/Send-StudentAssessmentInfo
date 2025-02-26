@@ -1,4 +1,4 @@
-SELECT [STU].[ID] AS [Student ID], [STU].[SC] AS [School], [CNF].[CD] AS [TA], [TCH].[EM] AS [Email]
+SELECT [STU].[ID] AS [employeeId], [STU].[SC] AS [departmentNumber], [CNF].[CD] AS [TA], [TCH].[EM] AS [Email]
 FROM
     (SELECT [CNF].*
     FROM [CNF]
@@ -14,7 +14,7 @@ FROM
 where STU.sc IN (1,2,3,5,6,7,8,10,11)
     and stu.tg = 'I';
 
-SELECT [STU].[ID] AS [Student ID], [STU].[SC] AS [School], [DSP].[DS] AS [TA], [TCH].[EM] AS [Email]
+SELECT [STU].[ID] AS [employeeId], [STU].[SC] AS [departmentNumber], [DSP].[DS] AS [TA], [TCH].[EM] AS [Email]
 FROM
     (SELECT [DSP].*
     FROM [DSP]
@@ -30,7 +30,7 @@ FROM
 where STU.sc IN (1,2,3,5,6,7,8,10,11)
     and stu.tg = 'I';
 
-SELECT [STU].[ID] AS [Student ID], [STU].[SC] AS [School], [CNF].[CD] AS [TA], [LCN].[EM] AS [Email]
+SELECT [STU].[ID] AS [employeeId], [STU].[SC] AS [departmentNumber], [CNF].[CD] AS [TA], [LCN].[EM] AS [Email]
 FROM
     (SELECT [CNF].*
     FROM [CNF]
@@ -45,7 +45,7 @@ FROM
 where stu.sc in (9,12,13,16,18,19,20,21,23,24,25,26,27,28, 30)
     and stu.tg = 'I';
 
-SELECT [STU].[ID] AS [Student ID], [STU].[SC] AS [School], [DSP].[DS] AS [TA], [LCN].[EM] AS [Email]
+SELECT [STU].[ID] AS [employeeId], [STU].[SC] AS [departmentNumber], [DSP].[DS] AS [TA], [LCN].[EM] AS [Email]
 FROM
     (SELECT [DSP].*
     FROM [DSP]

@@ -23,6 +23,14 @@ param (
  [switch]$WhatIf
 )
 
+function Format-EmailObj ($baseHtml) {
+ process {
+  #TODO
+  $_.message = $baseHtml -f $blahblah
+  Write-Verbose ()'{0}.{1}' -f $MyInvocation.MyCommand.Name, $_.)
+}
+$_
+}
 
 function Get-StudentTAData ($sqlParams, $baseSql) {
  process {
@@ -51,51 +59,74 @@ function Get-ActiveAD ($ou) {
 
  $output = Get-ADUser @allStuParams | Where-Object {
   $_.samAccountName -match "^\b[a-zA-Z][a-zA-Z]\d{5,6}\b$" -and
-  # $_.employeeId -match "^\d{5,6}$" -and
   $_.title -notmatch 'test' -and
   $_.AccountExpirationDate -isnot [datetime] -and
   # $_.LastLogonDate -is [datetime] -and
-  $_.Enabled -eq $True
- } | Sort-Object employeeId
- Write-Verbose ('{0}, Count: {1}' -f $MyInvocation.MyCommand.name, $output.count)
+  $_.Enabled -eq $True | Select-Object -Property @{n = 'departmentNumber'; e = {} }
+ }
+ Write-Host ('{0}, Count: {1}' -f $MyInvocation.MyCommand.name, @($output).count) -F Green
  $output
 }
 
-function New-StuObj {
+function Send-PwMsg {
+ begin {
+  $mailParams = @{
+   From       = '<{0}>' -f $EmailCredential.Username
+   Subject    = 'CUSD Password Expires Soon'
+   BodyAsHTML = $True
+   SMTPServer = 'smtp.office365.com'
+   Cred       = $EmailCredential # use a valid Office365 account with Flow rules in place to prevent SPAM warnings.
+   UseSSL     = $True
+   Port       = 587
+  }
+  if ( $Bcc ) { $mailParams.Bcc = $Bcc } # Add Bcc to outgoing email messages.
+ }
  process {
-  Write-Host ('{0}' -f $MyInvocation.MyCommand.Name)
-
+  $mailParams.Body = $_.html
+  $mailParams.To = "<$($_.mail1)>", "<$($_.mail2)>"
+  $msg = $MyInvocation.MyCommand.Name, ($mailParams.To -join ','), ((Get-Date $_.expireDate -f 'D').Replace(',', ''))
+  Write-Host ('{0},{1},{2}' -f $msg)
+  if (!$WhatIf) { Send-MailMessage @mailParams }
+  $mailParams
  }
 }
 
 # ==================== Main =====================
-# Imported Functions
-. .\lib\Clear-SessionData.ps1
-. .\lib\Get-SQLData.ps1
-. .\lib\Load-Module.ps1
-. .\lib\New-ADSession.ps1
-. .\lib\Select-DomainController.ps1
-. .\lib\Show-TestRun.ps1
+if ($Verbose) { $VerbosePreference = 'Continue' } # Imported, non-compiled module functions do not honor local session preferences
+# TODO
+Remove-Module CommonScriptFunctions
+$moduleCommands = 'Clear-SessionData', 'New-ADSession', 'New-SqlOperation', 'Select-DomainController', 'Show-TestRun'
+# Import-Module -Name CommonScriptFunctions -Cmdlet $moduleCmds
+Import-Module -Name 'G:\My Drive\CUSD\Scripts\Powershell\MyModules\CommonScriptFunctions\CommonScriptFunctions.psm1'
 
-Show-TestRun
 
-'SqlServer' | Load-Module
+if ($Whatif) { Show-TestRun }
+
 
 $sqlParamsSIS = @{
  Server     = $SISServer
  Database   = $SISDatabase
  Credential = $SISCredential
- # TrustServerCertificate = $true
 }
 
-$dc = Select-DomainController $DomainControllers
-New-ADSession $dc $ADCredential 'Get-ADUser'
+# $dc = Select-DomainController $DomainControllers
+# New-ADSession -dc $dc -cmdlets 'Get-ADUser' -Credential $ADCredential
 
-$adData = Get-StudentTAData $dc $OrgUnit $ADCredential
+# $adData = Get-StudentTAData $dc $OrgUnit $ADCredential
 
-$purpleFoldersSql = Get-Content .\sql\all-queries.sql -Raw
+# $adData = Get-ActiveAD $OrgUnit
+# Compare-Data $purpleFolderData $adData # Look for siteCode change
 
-$purpleFolderData = Get-SqlData -dbParams $sqlParamsSIS -baseSql $purpleFoldersSql
-$purpleFolderData
-# Get-ADStudents
-# Compare-Data
+# 2 pipelines - 1 for admin and 1 for counselors
+
+$adminSql = Get-Content .\sql\admin.sql -Raw
+$adminData = New-SqlOperation @sqlParamsSIS -Query $adminSql | ConvertTo-Csv | ConvertFrom-Csv
+$adminData.count
+
+$adminData | Select-Latest | Format-EmailObj $adminMsg | Send-Email
+
+# $counselorSql = Get-Content .\sql\counselors.sql -Raw
+# $counselorData = New-SqlOperation @sqlParamsSIS -Query $counselorSql | ConvertTo-Csv | ConvertFrom-Csv
+# $counselorData.count
+
+if ($Whatif) { Show-TestRun }
