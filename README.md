@@ -1,2 +1,2 @@
-﻿# Reset-AD-Accounts-With-Aeries
-This script gives students a temp password via the SIS web interface.
+﻿# Send-StudentAssessmentInfo
+This script notifies admin adn counselors when info needs to be passed on to the student's next school site.
