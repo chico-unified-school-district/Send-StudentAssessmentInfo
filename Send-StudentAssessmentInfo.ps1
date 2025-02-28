@@ -118,11 +118,8 @@ function Update-Priors ($csvFile, $priorData) {
 
 # ==================== Main =====================
 # if ($Verbose) { $VerbosePreference = 'SilentlyContinue' } # Imported, non-compiled module functions do not honor local session preferences
-# TODO
-Remove-Module CommonScriptFunctions -ErrorAction SilentlyContinue
-# $moduleCommands = 'Clear-SessionData', 'New-SqlOperation', 'Show-TestRun'
-# Import-Module -Name CommonScriptFunctions -Cmdlet $moduleCmds
-Import-Module -Name 'G:\My Drive\CUSD\Scripts\Powershell\MyModules\CommonScriptFunctions\CommonScriptFunctions.psm1'
+$moduleCommands = 'Clear-SessionData', 'New-SqlOperation', 'Show-TestRun'
+Import-Module -Name CommonScriptFunctions -Cmdlet $moduleCommands
 
 if ($WhatIf) { Show-TestRun }
 
