@@ -33,12 +33,11 @@ function Format-Obj ($type) {
  }
 }
 
-function Format-CounselorEmailMsg ($baseMsg, $subject) {
+function Format-EmailMsg ($baseMsg) {
  process {
   $msg = $baseMsg -replace 'STU.ID', $_.dbRow.ID
   $msg = $msg -replace 'STU.FN', $_.dbRow.FN
   $msg = $msg -replace 'STU.LN', $_.dbRow.LN
-  $_.subject = $subject
   $_.msg = $msg
   $_
  }
@@ -65,7 +64,7 @@ function Send-Msg {
  begin {
   $mailParams = @{
    From       = '<{0}>' -f $EmailCredential.Username
-   Subject    = $_.subject
+   Subject    = $null
    BodyAsHTML = $True
    SMTPServer = 'smtp.office365.com'
    Cred       = $EmailCredential # use a valid Office365 account with Flow rules in place to prevent SPAM warnings.
@@ -77,21 +76,22 @@ function Send-Msg {
  process {
   $mailParams.Body = $_.msg
   $mailParams.To = $_.dbRow.Email
-  Write-Host ($mailParams | Out-String)
-  $msg = $MyInvocation.MyCommand.Name, $mailParams.To, $_.dbRow.ID, $_.dbRow.School , $_.mailParams.Subject, $_.type
-  Write-Host ('{0},{1},{2},{3},{4},{5}' -f $msg) -F Blue
+  $mailParams.Subject = 'Threat Assessment Info - ' + $_.dbRow.FN + ' ' + $_.dbRow.LN
+  Write-Verbose ($mailParams | Out-String)
+  $msg = $MyInvocation.MyCommand.Name, $mailParams.To,
+  $_.dbRow.ID, $_.dbRow.School , $_.type
+  Write-Host ('{0},{1},{2},{3},{4}' -f $msg) -F Blue
   if (!$WhatIf) {
    Try {
-    # Send-MailMessage @mailParams
-    Write-Host 'Send!'
+    Write-Debug  'Send Mail Message?'
+    Send-MailMessage @mailParams
    }
    catch {
     Write-Error ('{0},{1},{2}, ERROR sending email' -f $msg)
+    $global:skip += $_.key
     return
    }
   }
-  $_
-  # $mailParams
  }
 }
 
@@ -108,16 +108,16 @@ function Skip-Priors ($priorData) {
  }
 }
 
-function Update-Priors ($csvFile) {
+function Update-Priors ($csvFile, $priorData) {
  process {
+  if ($WhatIf -or ($priorData.key -contains $_.key) -or ($global:skip -contains $_.key)) { return }
   Write-Host ('{0},{1}' -f $MyInvocation.MyCommand.Name, $_.key) -F Green
-  if ($WhatIf) { return }
-  $_.key | OUt-File $csvFile -Append
+  $_.key | Out-File $csvFile -Append
  }
 }
 
 # ==================== Main =====================
-if ($Verbose) { $VerbosePreference = 'Continue' } # Imported, non-compiled module functions do not honor local session preferences
+# if ($Verbose) { $VerbosePreference = 'SilentlyContinue' } # Imported, non-compiled module functions do not honor local session preferences
 # TODO
 Remove-Module CommonScriptFunctions -ErrorAction SilentlyContinue
 # $moduleCommands = 'Clear-SessionData', 'New-SqlOperation', 'Show-TestRun'
@@ -134,19 +134,29 @@ $sqlParamsSIS = @{
 
 $priorCSV = '.\lib\priorNotifications.txt'
 $priorNotifications = Get-Priors $priorCsv
-# 2 pipelines - 1 for admin and 1 for counselors
+$global:skip = @()
 
-# $adminSql = Get-Content .\sql\admin.sql -Raw
-# $adminData = New-SqlOperation @sqlParamsSIS -Query $adminSql | ConvertTo-Csv | ConvertFrom-Csv
-# $adminData.count
+# ======== ADMIN
+$adminSql = Get-Content .\sql\admin.sql -Raw
+$adminData = New-SqlOperation @sqlParamsSIS -Query $adminSql | ConvertTo-Csv | ConvertFrom-Csv
+'Admin Msg Count: ' + @($adminData).count
 
+$adminMsg = Get-Content .\html\admin.html -Raw
+$adminObjs = Select-Latest $adminData | Format-Obj Admin
+$adminObjs | Skip-Priors $priorNotifications |
+Format-EmailMsg $adminMsg | Send-Msg
+
+# ======== COUNSELORS
 $counselorSql = Get-Content .\sql\counselors.sql -Raw
 $counselorData = New-SqlOperation @sqlParamsSIS -Query $counselorSql | ConvertTo-Csv | ConvertFrom-Csv
-# $counselorData.count
+'Counselor Msg Count: ' + @($counselorData).count
 
-$counselorMgs = Get-Content .\html\counselors.html -Raw
-$counselorSubject = 'Forward Risk Assessment Information'
-Select-Latest $counselorData | Format-Obj Counselors | Skip-Priors $priorNotifications |
-Format-CounselorEmailMsg $counselorMgs $counselorSubject | Send-Msg | Update-Priors $priorCSV
+$counselorMsg = Get-Content .\html\counselors.html -Raw
+$counselorObjs = Select-Latest $counselorData | Format-Obj Counselors
+$counselorObjs | Skip-Priors $priorNotifications |
+Format-EmailMsg $counselorMsg | Send-Msg
+
+$counselorObjs | Update-Priors $priorCSV $priorNotifications
+$adminObjs | Update-Priors $priorCSV $priorNotifications
 
 if ($WhatIf) { Show-TestRun }

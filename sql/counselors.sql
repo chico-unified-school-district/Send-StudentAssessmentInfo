@@ -22,7 +22,7 @@
     AND [CNF].[CD] = 'CI'
     AND DATEDIFF(day, [ENR].[ED], [ENR].[LD]) > 2
     and [ENR].[PR]  not in ('7','C')
-    AND [ENR].[LD] > DATEADD(day,-30,GETDATE())
+    AND [ENR].[LD] > DATEADD(day,-7,GETDATE())
 UNION ALL
   /* secondary students with assigned counsoler*/
   SELECT distinct
@@ -47,5 +47,5 @@ UNION ALL
     AND [ENR].[ER] not IN (230, 240, 260, 280, 300, 370, 380, 400, 410, 440, 450, 470)
     AND [CNF].[CD] = 'CI'
     AND DATEDIFF(day, [ENR].[ED], [ENR].[LD]) > 2 and [ENR].[PR]  not in ('7','C')
-    AND [ENR].[LD] > DATEADD(day,-30,GETDATE())
+    AND [ENR].[LD] > DATEADD(day,-7,GETDATE())
 order by stu.id, enr.sc
