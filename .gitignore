@@ -13,4 +13,3 @@ logs/*
 /params.ps1
 /notes.sql
 /.vscode
-/lib/priorNotifications.txt
