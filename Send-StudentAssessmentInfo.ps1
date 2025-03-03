@@ -76,7 +76,7 @@ function Send-Msg {
  process {
   $mailParams.Body = $_.msg
   $mailParams.To = $_.dbRow.Email
-  $mailParams.Subject = 'Threat Assessment Info - ' + $_.dbRow.FN + ' ' + $_.dbRow.LN
+  $mailParams.Subject = 'Forward Assessment Info - ' + $_.dbRow.FN + ' ' + $_.dbRow.LN
   Write-Verbose ($mailParams | Out-String)
   $msg = $MyInvocation.MyCommand.Name, $mailParams.To,
   $_.dbRow.ID, $_.dbRow.School , $_.type
