@@ -88,10 +88,10 @@ function Send-Msg {
    }
    catch {
     Write-Error ('{0},{1},{2}, ERROR sending email' -f $msg)
-    $global:skip += $_.key
     return
    }
   }
+  $global:skip += $_.key
  }
 }
 
@@ -99,6 +99,7 @@ function Skip-Priors ($priorData) {
  begin {
  }
  process {
+  # No global skip here as it would prevent both admin and counselors from getting proper notifications
   if ($priorData.key -contains $_.key) {
    $msg = $MyInvocation.MyCommand.Name, ($_.dbRow.FN + ' ' + $_.dbRow.LN), $_.key
    Write-Host ('{0},{1},{2}' -f $msg) -F Yellow
