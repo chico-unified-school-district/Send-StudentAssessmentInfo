@@ -17,7 +17,7 @@ param (
 function Get-Priors ($csvFile) {
     process {
         Write-Host ('{0},{1}' -f $MyInvocation.MyCommand.Name, $csvFile) -F Green
-        if (!(Test-Path $csvFile)) { 'key' | Out-File $csvFile }
+        if (!(Test-Path $csvFile)) { 'key' | Export-Csv -Path $csvFile }
         Import-Csv $csvFile
     }
 }
@@ -113,8 +113,7 @@ function Update-Priors ($csvFile, $priorData) {
     process {
         # if ($WhatIf -or ($priorData.key -contains $_.key) -or ($global:skip -contains $_.key)) { return }
         Write-Host ('{0},{1}' -f $MyInvocation.MyCommand.Name, $_.key) -F Green
-        if ($WhatIf) { return }
-        $_.key | Out-File $csvFile -Append
+        @{key = $_.key } | Export-Csv -Path $csvFile -Append -WhatIf:$WhatIf
     }
 }
 
