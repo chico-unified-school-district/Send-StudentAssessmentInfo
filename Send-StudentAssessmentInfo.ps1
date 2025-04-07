@@ -18,8 +18,8 @@ function Get-Priors ($priorDataFile) {
  process {
   Write-Host ('{0},{1}' -f $MyInvocation.MyCommand.Name, $priorDataFile) -F Green
   New-Item -Name data -ItemType Directory -Force
-  if (!(Test-Path $priorDataFile)) { 'Prior Data' | Out-File -Path $priorDataFile }
-  Get-Content -Path $priorDataFile
+  if (!(Test-Path $priorDataFile)) { 'Prior Data' | Out-File $priorDataFile }
+  Get-Content $priorDataFile
  }
 }
 
