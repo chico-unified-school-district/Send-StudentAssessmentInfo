@@ -17,7 +17,7 @@ param (
 function Get-Priors ($priorDataFile) {
  process {
   Write-Host ('{0},{1}' -f $MyInvocation.MyCommand.Name, $priorDataFile) -F Green
-  if (!(Test-Path '.\data')) { New-Item -Path '.\data' -ItemType Directory }
+  if (!(Test-Path '.\data')) { New-Item -Name data -ItemType Directory }
   if (!(Test-Path $priorDataFile)) { 'Prior Data' | Out-File -Path $priorDataFile }
   Get-Content -Path $priorDataFile
  }
