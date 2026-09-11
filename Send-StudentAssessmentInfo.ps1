@@ -50,7 +50,7 @@ function Select-Latest ($data) {
  process {
   # Write-Host ('{0}' -f $MyInvocation.MyCommand.Name)
   $uniqueIDs = ($data | Select-Object -Property ID | Sort-Object -Property ID -Unique).ID
-  Foreach ($id in $uniqueIDs) {
+  foreach ($id in $uniqueIDs) {
    $allMatching = $data | Where-Object { $_.ID -eq $id }
    # Write-Host ($allMatching | Out-String) -F Blue
    $result = $allMatching | Sort-Object -Property ID, 'SC Leave Date' -Descending | Select-Object -First 1
@@ -83,6 +83,21 @@ function Send-Msg {
   $_.dbRow.ID, $_.dbRow.School , $_.type
   Write-Host ('{0},{1},{2},{3},{4}' -f $msg) -F Blue
   if (!$WhatIf) { Send-MailMessage @mailParams }
+  $_
+ }
+}
+
+function Show-Object {
+ begin {
+  $i = 0
+ }
+ process {
+  $i++
+  Write-Verbose ($MyInvocation.MyCommand.name, $_ | Out-String)
+  # if ($Wait) { Read-Host ('{0}' -f ('x' * 50)) }
+ }
+ end {
+  Write-Host ('{0},Total Processed: {1}' -f $MyInvocation.MyCommand.Name, $i) -f Green
  }
 }
 
@@ -121,13 +136,13 @@ $priorDataFile = '.\data\priorData.txt'
 $priorData = Get-Priors $priorDataFile
 
 # ======== ADMIN
-$adminSql = Get-Content .\sql\admin.sql -Raw
-$adminData = New-SqlOperation @sqlParamsSIS -Query $adminSql | ConvertTo-Csv | ConvertFrom-Csv
-'Admin Msg Count: ' + @($adminData).count
+# $adminSql = Get-Content .\sql\admin.sql -Raw
+# $adminData = New-SqlOperation @sqlParamsSIS -Query $adminSql | ConvertTo-Csv | ConvertFrom-Csv
+# 'Admin Msg Count: ' + @($adminData).count
 
-$adminMsg = Get-Content .\html\admin.html -Raw
-$adminObjs = Select-Latest $adminData | Format-Obj Admin
-$adminObjs | Skip-Priors $priorData | Format-EmailMsg $adminMsg | Send-Msg
+# $adminMsg = Get-Content .\html\admin.html -Raw
+# $adminObjs = Select-Latest $adminData | Format-Obj Admin
+# $adminObjs | Skip-Priors $priorData | Format-EmailMsg $adminMsg | Send-Msg | Show-Object
 
 # ======== COUNSELORS
 $counselorSql = Get-Content .\sql\counselors.sql -Raw
@@ -136,9 +151,9 @@ $counselorData = New-SqlOperation @sqlParamsSIS -Query $counselorSql | ConvertTo
 
 $counselorMsg = Get-Content .\html\counselors.html -Raw
 $counselorObjs = Select-Latest $counselorData | Format-Obj Counselors
-$counselorObjs | Skip-Priors $priorData | Format-EmailMsg $counselorMsg | Send-Msg
+$counselorObjs | Skip-Priors $priorData | Format-EmailMsg $counselorMsg | Send-Msg | Show-Object
 
 $counselorObjs | Update-Priors $priorDataFile $priorData
-$adminObjs | Update-Priors $priorDataFile $priorData
+# $adminObjs | Update-Priors $priorDataFile $priorData
 
 if ($WhatIf) { Show-TestRun }
